@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WC Tournament Predictions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <section id="view-auth" class="view view--centered hidden">
+        <div class="auth-card card">
+          <header class="auth-header">
+            <h1>WC Tournament Predictions</h1>
+            <p class="muted small">Register or sign in to continue.</p>
+          </header>
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab auth-tab--active" data-tab="register">Register</button>
+            <button type="button" class="auth-tab" data-tab="login">Sign in</button>
+          </div>
+          <form id="register-form" class="auth-form">
+            <h2>Registration</h2>
+            <p class="muted small joke-hint">Passport form is a joke field.</p>
+            <div class="form-section">
+              <h3>Account</h3>
+              <div class="form-grid form-grid--1">
+                <label>Nickname<input type="text" id="reg-nickname" required minlength="2" /></label>
+                <label>Password<input type="password" id="reg-password" required minlength="4" /></label>
+                <label>Repeat password<input type="password" id="reg-password-confirm" required minlength="4" /></label>
+              </div>
+            </div>
+            <div class="form-section form-section--passport">
+              <h3>Passport data (joke)</h3>
+              <div class="form-grid">
+                <label>Full name<input type="text" id="reg-fullname" required /></label>
+                <label>Series and number<input type="text" id="reg-passport-number" required /></label>
+                <label>Issued by<input type="text" id="reg-passport-issued" required /></label>
+                <label>Issue date<input type="date" id="reg-passport-date" required /></label>
+              </div>
+            </div>
+            <p id="register-error" class="form-error hidden"></p>
+            <button type="submit" class="btn-full">Register</button>
+          </form>
+          <form id="login-form" class="auth-form hidden">
+            <h2>Sign in</h2>
+            <div class="form-grid form-grid--1">
+              <label>Nickname<input type="text" id="login-nickname" required /></label>
+              <label>Password<input type="password" id="login-password" required /></label>
+            </div>
+            <p id="login-error" class="form-error hidden"></p>
+            <button type="submit" class="btn-full">Sign in</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="view-onboarding" class="view view--centered hidden">
+        <div class="auth-card card">
+          <header class="auth-header">
+            <h1>Hello, <span id="onboarding-nickname"></span>!</h1>
+            <p class="muted">Add your long-term picks before entering main page.</p>
+          </header>
+          <form id="onboarding-form" class="outrights-form">
+            <div class="form-grid">
+              <label>World Cup winner (+8)<input type="text" id="onb-winner" required /></label>
+              <label>Best tournament player (+8)<input type="text" id="onb-best-player" required /></label>
+              <label>Top scorer (+5)<input type="text" id="onb-top-scorer" required /></label>
+              <label>Best dark horse (+6)<input type="text" id="onb-dark-horse" required /></label>
+            </div>
+            <p id="onboarding-error" class="form-error hidden"></p>
+            <button type="submit" class="btn-full">Save and continue</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="view-main" class="view hidden">
+        <header class="main-header">
+          <div>
+            <h1>WC Tournament Predictions</h1>
+            <p class="muted small">Hi, <strong id="main-nickname"></strong>!</p>
+          </div>
+          <button type="button" id="logout-btn" class="secondary-btn">Sign out</button>
+        </header>
+        <main class="layout">
+          <section class="card card--outrights">
+            <div class="card-header-row">
+              <div>
+                <h2>Your long-term picks</h2>
+                <p id="outrights-deadline-hint" class="muted small"></p>
+              </div>
+              <button type="button" id="edit-outrights-btn" class="secondary-btn hidden">Edit</button>
+            </div>
+            <div id="outrights-display" class="outrights-display"></div>
+            <form id="main-outrights-form" class="outrights-form hidden">
+              <div class="form-grid">
+                <label>World Cup winner (+8)<input type="text" id="main-winner" required /></label>
+                <label>Best tournament player (+8)<input type="text" id="main-best-player" required /></label>
+                <label>Top scorer (+5)<input type="text" id="main-top-scorer" required /></label>
+                <label>Best dark horse (+6)<input type="text" id="main-dark-horse" required /></label>
+              </div>
+              <div class="actions">
+                <button type="submit">Save</button>
+                <button type="button" id="cancel-outrights-btn" class="secondary-btn">Cancel</button>
+              </div>
+            </form>
+          </section>
+
+          <div class="main-grid">
+            <section class="card">
+              <h2>Матчи сёдня</h2>
+              <p class="muted small">Outcome +1, exact score +3, best player +2.</p>
+              <div id="matches-list" class="matches-list"></div>
+            </section>
+            <section class="card">
+              <h2>Leaderboard</h2>
+              <div class="scoreboard-table-wrapper">
+                <table class="scoreboard-table">
+                  <thead><tr><th>#</th><th>Player</th><th>Points</th></tr></thead>
+                  <tbody id="scoreboard-body"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <details class="card card--admin">
+            <summary>Organizer: actual results</summary>
+            <p class="muted small">Enter real results to calculate points.</p>
+            <h3 class="admin-subtitle">Matches today</h3>
+            <div id="actual-matches-list" class="matches-list matches-list--compact"></div>
+            <h3 class="admin-subtitle">Tournament outcomes</h3>
+            <form id="actual-outrights-form" class="outrights-form">
+              <div class="form-grid">
+                <label>Winner<input type="text" id="actual-winner" /></label>
+                <label>Best player<input type="text" id="actual-best-player" /></label>
+                <label>Top scorer<input type="text" id="actual-top-scorer" /></label>
+                <label>Dark horse<input type="text" id="actual-dark-horse" /></label>
+              </div>
+              <div class="actions">
+                <button type="submit">Save outcomes</button>
+                <button type="button" id="recalculate-btn" class="secondary-btn">Recalculate</button>
+              </div>
+            </form>
+          </details>
+        </main>
+      </section>
+    </div>
+    <script src="../app.js"></script>
+  </body>
+</html>
