@@ -107,7 +107,7 @@
           <div class="main-grid">
             <section class="card">
               <h2>Матчи сёдня</h2>
-              <p class="muted small">Outcome +1, exact score +3, best player +2.</p>
+              <p class="muted small">Исход +1, точный счёт +3, лучший игрок +2.</p>
               <div id="matches-list" class="matches-list"></div>
             </section>
             <section class="card">
@@ -139,10 +139,26 @@
                 <button type="button" id="recalculate-btn" class="secondary-btn">Recalculate</button>
               </div>
             </form>
+
+            <details class="test-block">
+              <summary class="test-block__title">Test / Debug</summary>
+              <p class="muted small">Use mock data to test all match states (upcoming / live / ended) without waiting for real games.</p>
+              <div class="test-controls">
+                <button type="button" id="load-mock-btn">Load mock data</button>
+                <span class="test-separator">or load real API by date:</span>
+                <label class="test-date-label">
+                  <input type="date" id="test-date-input" />
+                  <button type="button" id="reload-date-btn" class="secondary-btn">Reload</button>
+                </label>
+              </div>
+              <p class="muted small test-mock-hint">
+                Mock: France–Brazil <strong>upcoming</strong>, Germany–Argentina <strong>live 1:0</strong>, Spain–England <strong>ended 2:1</strong>
+              </p>
+            </details>
           </details>
         </main>
       </section>
     </div>
-    <script src="../app.js"></script>
+    <script type="module" src="../app.js"></script>
   </body>
 </html>

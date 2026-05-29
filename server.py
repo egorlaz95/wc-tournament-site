@@ -1,8 +1,8 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import time
@@ -32,7 +32,8 @@ app = Flask(
 
 CORS(app)
 
-TARGET_DATE = "2026-05-30"
+def today_date():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
 # ==========================================
@@ -51,7 +52,10 @@ def index():
 @app.route("/api/matches")
 def matches():
     try:
-        url = "https://api.sstats.net/games/list?LeagueId=2&Year=2025"
+        # ?date=YYYY-MM-DD overrides today (for testing / browsing other days)
+        date_filter = request.args.get("date") or today_date()
+
+        url = f"https://api.sstats.net/games/list?LeagueId=303&Year=2025&Date={date_filter}&Limit=100"
 
         response = requests.get(url, headers={"Accept": "application/json"}, timeout=20)
         data = response.json()
@@ -60,40 +64,33 @@ def matches():
 
         matches_raw = unwrap(data)
 
-        log("UNWRAPPED MATCHES", matches_raw[:5])  # чтобы не заспамить
+        all_matches = []
 
-        matches = []
-
-        for idx, item in enumerate(matches_raw):
-
-            log(f"MATCH RAW #{idx}", item)
-
+        for item in matches_raw:
             match = normalize_match(item)
-
-
-            log(f"NORMALIZED MATCH #{idx}", match)
-
             if not match:
                 continue
-
-            if match["date"] != TARGET_DATE:
+            if match["date"] != date_filter:
                 continue
+            match["odds"] = extract_match_odds(item.get("odds", []))
+            all_matches.append(match)
 
-            # ===== DETAILS =====
+        # Upcoming/live first (by kick-off asc), completed last (most recent first)
+        not_ended = sorted(
+            [m for m in all_matches if int(m.get("status", 1)) <= 7],
+            key=lambda m: m["dateTimeRaw"]
+        )
+        completed = sorted(
+            [m for m in all_matches if int(m.get("status", 1)) > 7],
+            key=lambda m: m["dateTimeRaw"],
+            reverse=True
+        )
 
-            odds = extract_match_odds(item.get("odds", []))
+        result = not_ended + completed
 
-            log(f"ODDS MATCH ID {match['id']}", odds)
+        log("FINAL MATCHES RESULT", result)
 
-            match["odds"] = odds
-
-            matches.append(match)
-
-        log("FINAL MATCHES RESULT", matches)
-
-        matches.sort(key=lambda x: x["dateTimeRaw"])
-
-        return jsonify(matches[:3])
+        return jsonify(result)
 
     except Exception as e:
         print("\n❌ ERROR:\n", e)
@@ -150,32 +147,50 @@ def normalize_match(item):
             date_raw.replace("Z", "+00:00")
         )
 
+        home_team = item.get("homeTeam") or {}
+        away_team = item.get("awayTeam") or {}
+
+        # Status: 1=not scheduled, 2=not started, 3-7=live, 8-10=ended
+        status = item.get("status") or 1
+
+        # Full-time score — try the most common field name variants
+        home_score = item.get("homeScore")
+        if home_score is None:
+            home_score = item.get("homeFullTimeScore")
+        away_score = item.get("awayScore")
+        if away_score is None:
+            away_score = item.get("awayFullTimeScore")
+
+        league_obj = item.get("league") or {}
+        season_obj = item.get("season") or {}
+        league_name = (
+            league_obj.get("name")
+            or (season_obj.get("league") or {}).get("name")
+            or item.get("leagueName")
+            or ""
+        )
+
         return {
             "id": str(item.get("id")),
 
-            "home":
-                item.get("homeTeam", {}).get("name")
-                or "Home",
+            "home": home_team.get("name") or "Home",
+            "away": away_team.get("name") or "Away",
 
-            "away":
-                item.get("awayTeam", {}).get("name")
-                or "Away",
+            "homeTeamId": str(home_team.get("id") or ""),
+            "awayTeamId": str(away_team.get("id") or ""),
 
-            "time":
-                dt.strftime("%H:%M"),
+            "status": status,
+            "homeScore": home_score,
+            "awayScore": away_score,
 
-            "date":
-                dt.strftime("%Y-%m-%d"),
+            "time": dt.strftime("%H:%M"),
+            "date": dt.strftime("%Y-%m-%d"),
+            "dateTimeRaw": date_raw,
 
-            "dateTimeRaw":
-                date_raw,
-
-            "group":
-                item.get("roundName")
-                or "World Cup",
+            "league": league_name,
+            "group":  item.get("roundName") or "",
 
             "odds": extract_match_odds(item.get("odds", []))
-
         }
 
     except Exception as e:
@@ -250,7 +265,7 @@ def get_cached_matches():
 
     for item in matches_raw:
         match = normalize_match(item)
-        if match and match["date"] == TARGET_DATE:
+        if match and match["date"] == today_date():
             processed.append(match)
 
     processed.sort(key=lambda x: x["dateTimeRaw"])
@@ -267,8 +282,6 @@ def get_cached_matches():
 # ==========================================
 
 if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=3000,
-        debug=True
-    )
+    import os
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port, debug=False)
